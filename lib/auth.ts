@@ -26,48 +26,55 @@ export interface AppUser {
  * Renvoie null si aucune session valide.
  */
 export async function getAppUser(): Promise<AppUser | null> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!user?.email) return null;
+    if (!user?.email) return null;
 
-  const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
-  if (dbUser) {
+    const dbUser = await prisma.user.findUnique({ where: { email: user.email } });
+    if (dbUser) {
+      return {
+        authId: user.id,
+        email: user.email,
+        nom: dbUser.nom,
+        role: dbUser.role,
+        entityId: dbUser.id,
+        organisationId: dbUser.organisationId,
+      };
+    }
+
+    const alternant = await prisma.alternant.findUnique({
+      where: { email: user.email },
+    });
+    if (alternant) {
+      return {
+        authId: user.id,
+        email: user.email,
+        nom: alternant.nom,
+        role: "ALTERNANT",
+        entityId: alternant.id,
+        organisationId: alternant.organisationId,
+      };
+    }
+
+    // Authentifié mais pas encore provisionné côté métier.
     return {
       authId: user.id,
       email: user.email,
-      nom: dbUser.nom,
-      role: dbUser.role,
-      entityId: dbUser.id,
-      organisationId: dbUser.organisationId,
+      nom: (user.user_metadata?.nom as string | undefined) ?? user.email,
+      role: null,
+      entityId: null,
+      organisationId: null,
     };
+  } catch (e) {
+    // Supabase/Prisma indisponible ou mal configuré → traite comme non connecté
+    // (la vraie erreur reste visible dans les logs) plutôt que de faire un 500.
+    console.error("[getAppUser] Échec de résolution de l'utilisateur :", e);
+    return null;
   }
-
-  const alternant = await prisma.alternant.findUnique({
-    where: { email: user.email },
-  });
-  if (alternant) {
-    return {
-      authId: user.id,
-      email: user.email,
-      nom: alternant.nom,
-      role: "ALTERNANT",
-      entityId: alternant.id,
-      organisationId: alternant.organisationId,
-    };
-  }
-
-  // Authentifié mais pas encore provisionné côté métier.
-  return {
-    authId: user.id,
-    email: user.email,
-    nom: (user.user_metadata?.nom as string | undefined) ?? user.email,
-    role: null,
-    entityId: null,
-    organisationId: null,
-  };
 }
 
 /** Exige une session ; redirige vers /login sinon. */
