@@ -4,6 +4,7 @@
   "private": true,
   "description": "MVP de gestion de projet pour la Supply Chain / Logistique (Gantt, réunions, to-do, dashboard).",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
