@@ -70,6 +70,17 @@ export async function getAppUser(): Promise<AppUser | null> {
       organisationId: null,
     };
   } catch (e) {
+    // Laisser passer les signaux internes de Next.js — rendu dynamique
+    // (cookies()), redirect(), notFound() : les intercepter casserait le rendu.
+    const digest = (e as { digest?: unknown })?.digest;
+    const message = e instanceof Error ? e.message : "";
+    if (
+      (typeof digest === "string" &&
+        (digest === "DYNAMIC_SERVER_USAGE" || digest.startsWith("NEXT_"))) ||
+      message.includes("Dynamic server usage")
+    ) {
+      throw e;
+    }
     // Supabase/Prisma indisponible ou mal configuré → traite comme non connecté
     // (la vraie erreur reste visible dans les logs) plutôt que de faire un 500.
     console.error("[getAppUser] Échec de résolution de l'utilisateur :", e);
