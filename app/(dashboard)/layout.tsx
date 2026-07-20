@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireUser, type AppRole } from "@/lib/auth";
+import { mfaDoitVerifier } from "@/lib/mfa";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { signOut } from "../(auth)/actions";
 import { arreterImpersonation } from "./superadmin/actions";
@@ -17,6 +19,10 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser();
+  // Défi 2FA : une session en aal1 alors qu'un facteur exige aal2 est renvoyée
+  // vers l'écran de vérification avant tout accès au tableau de bord.
+  if (await mfaDoitVerifier()) redirect("/2fa");
+
   const roleLabel =
     user.isSuperAdmin && !user.impersonating
       ? "Mode administrateur"

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { StatutMission } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { dateLimite, estEnRetard, messageAlerte } from "@/lib/alertes";
+import { rappelsContrat } from "@/lib/contrat";
 import { creerNotification } from "@/lib/notifications/notifier";
 import { envoyerSMS, smsConfigure } from "@/lib/notifications/sms";
 
@@ -76,10 +77,46 @@ export async function GET(request: Request) {
     }
   }
 
+  // ── Rappels d'échéances légales du contrat (période probatoire, fin) ──
+  const contrats = await prisma.alternant.findMany({
+    where: {
+      OR: [{ dateDebutContrat: { not: null } }, { dateFinContrat: { not: null } }],
+    },
+    select: {
+      nom: true,
+      tuteurId: true,
+      dateDebutContrat: true,
+      dateFinContrat: true,
+    },
+  });
+
+  let rappelsCrees = 0;
+  for (const a of contrats) {
+    const messages = rappelsContrat(
+      {
+        nom: a.nom,
+        debutIso: a.dateDebutContrat?.toISOString().slice(0, 10) ?? null,
+        finIso: a.dateFinContrat?.toISOString().slice(0, 10) ?? null,
+      },
+      todayIso,
+    );
+    for (const contenu of messages) {
+      const existe = await prisma.notification.findFirst({
+        where: { userId: a.tuteurId, contenu },
+        select: { id: true },
+      });
+      if (existe) continue;
+      const { email } = await creerNotification({ userId: a.tuteurId, contenu });
+      rappelsCrees += 1;
+      if (email.sent) emailsEnvoyes += 1;
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     verifiees: missions.length,
     creees,
+    rappelsContrat: rappelsCrees,
     emailsEnvoyes,
     smsEnvoyes,
   });

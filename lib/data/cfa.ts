@@ -13,6 +13,35 @@ export interface LigneSyntheseCfa {
   risque: Risque;
 }
 
+/** CFA avec leurs référents et le nombre de diplômes rattachés (gestion). */
+export function getCfasAvecComptes() {
+  return prisma.cfa.findMany({
+    orderBy: { nom: "asc" },
+    select: {
+      id: true,
+      nom: true,
+      referents: {
+        select: { id: true, nom: true, email: true },
+        orderBy: { nom: "asc" },
+      },
+      _count: { select: { referentiels: true } },
+    },
+  });
+}
+
+/** Tous les référentiels avec leur rattachement CFA éventuel. */
+export function getReferentielsAvecCfa() {
+  return prisma.referentiel.findMany({
+    orderBy: { nom: "asc" },
+    select: {
+      id: true,
+      nom: true,
+      cfaId: true,
+      cfa: { select: { nom: true } },
+    },
+  });
+}
+
 /** Nom du CFA (null si introuvable). */
 export async function getCfaNom(cfaId: string): Promise<string | null> {
   const cfa = await prisma.cfa.findUnique({

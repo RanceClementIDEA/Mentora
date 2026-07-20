@@ -81,6 +81,10 @@ model Alternant {
   diplome          Referentiel  @relation(fields: [diplomeId], references: [id])
   // Rythme d'alternance, ex : [{ "debut": "...", "fin": "...", "type": "ECOLE" | "ENTREPRISE" }]
   rythmeAlternance Json?
+  // Conformité administrative du contrat (échéances légales).
+  dateDebutContrat DateTime?
+  dateFinContrat   DateTime?
+  opco             String? // opérateur de compétences rattaché
   missions         Mission[]
   bilans           BilanHebdo[]
   // Score de décrochage 0-100 calculé par l'IA (renseigné en V2 — Phase 10).
@@ -178,6 +182,21 @@ enum Canal {
   EMAIL
   SMS
   WHATSAPP
+}
+
+// ── AuditLog : traçabilité des accès sensibles (mode super-admin) ─
+model AuditLog {
+  id             String   @id @default(cuid())
+  action         String // ex : IMPERSONATION_START / IMPERSONATION_STOP
+  acteurEmail    String // e-mail authentifié du super-admin (jamais l'identité empruntée)
+  cibleType      String? // "user" | "alternant"
+  cibleId        String?
+  cibleNom       String?
+  organisationId String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([organisationId])
 }
 
 // ── Abonnement : facturation Stripe, métrée à l'alternant ───────

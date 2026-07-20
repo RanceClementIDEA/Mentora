@@ -1,15 +1,19 @@
 import Link from "next/link";
 import { dashboardPathForRole, requireUser } from "@/lib/auth";
+import { getMfaEtat } from "@/lib/mfa";
 import { mettreAJourTelephone, supprimerMonCompte } from "./actions";
+import { desactiver2fa } from "./2fa/actions";
 
 export const metadata = { title: "Mon compte · AlternPilot" };
 
 export default async function MonComptePage({
   searchParams,
 }: {
-  searchParams: { error?: string; tel?: string };
+  searchParams: { error?: string; tel?: string; ok?: string };
 }) {
   const user = await requireUser();
+  const mfa = await getMfaEtat();
+  const compteSensible = user.role === "ADMIN" || user.isSuperAdmin;
 
   return (
     <div className="max-w-2xl">
@@ -37,11 +41,67 @@ export default async function MonComptePage({
           Téléphone enregistré.
         </p>
       )}
+      {searchParams.ok === "2fa-on" && (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          Double authentification activée.
+        </p>
+      )}
+      {searchParams.ok === "2fa-off" && (
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+          Double authentification désactivée.
+        </p>
+      )}
       {searchParams.error && (
         <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {searchParams.error}
         </p>
       )}
+
+      {/* Double authentification (2FA). */}
+      <section className="mt-8 rounded-2xl border bg-card p-5 shadow-soft">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">
+            Double authentification (2FA)
+          </h2>
+          <span
+            className={`rounded-lg px-2 py-0.5 text-xs font-medium ${
+              mfa.actif
+                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {mfa.actif ? "Activée" : "Inactive"}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Un code temporaire (application d&apos;authentification) est demandé en
+          plus du mot de passe à chaque connexion.
+        </p>
+
+        {compteSensible && !mfa.actif && (
+          <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            Fortement recommandée pour un compte administrateur.
+          </p>
+        )}
+
+        {mfa.actif ? (
+          <form action={desactiver2fa} className="mt-3">
+            <button
+              type="submit"
+              className="rounded-xl border px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Désactiver la 2FA
+            </button>
+          </form>
+        ) : (
+          <Link
+            href="/mon-compte/2fa"
+            className="mt-3 inline-block rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Activer la 2FA
+          </Link>
+        )}
+      </section>
 
       <section className="mt-8 rounded-2xl border bg-card p-5 shadow-soft">
         <h2 className="text-sm font-semibold text-foreground">

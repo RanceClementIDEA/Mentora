@@ -162,6 +162,42 @@ export async function validerBilan(bilanId: string): Promise<void> {
   redirect(base(bilan.alternant.id));
 }
 
+/** Enregistre les informations de contrat (échéances légales) d'un alternant. */
+export async function enregistrerContrat(
+  alternantId: string,
+  formData: FormData,
+): Promise<void> {
+  await assertOwned(alternantId);
+
+  const debutRaw = String(formData.get("dateDebut") ?? "").trim();
+  const finRaw = String(formData.get("dateFin") ?? "").trim();
+  const opcoRaw = String(formData.get("opco") ?? "").trim();
+
+  const estDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+  if ((debutRaw && !estDate(debutRaw)) || (finRaw && !estDate(finRaw))) {
+    redirect(`${base(alternantId)}?error=${encodeURIComponent("Date invalide.")}`);
+  }
+  if (debutRaw && finRaw && finRaw < debutRaw) {
+    redirect(
+      `${base(alternantId)}?error=${encodeURIComponent(
+        "La date de fin doit être postérieure à la date de début.",
+      )}`,
+    );
+  }
+
+  await prisma.alternant.update({
+    where: { id: alternantId },
+    data: {
+      dateDebutContrat: debutRaw ? new Date(`${debutRaw}T00:00:00.000Z`) : null,
+      dateFinContrat: finRaw ? new Date(`${finRaw}T00:00:00.000Z`) : null,
+      opco: opcoRaw || null,
+    },
+  });
+
+  revalidatePath(base(alternantId));
+  redirect(`${base(alternantId)}?contrat=1`);
+}
+
 /** Supprime la période à l'index donné. */
 export async function supprimerPeriode(
   alternantId: string,

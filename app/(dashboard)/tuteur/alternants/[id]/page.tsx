@@ -9,9 +9,11 @@ import { CalendrierAlternance } from "@/components/calendrier/calendrier-alterna
 import { GenererResume } from "@/components/bilan/generer-resume";
 import { RisqueCard } from "@/components/risque/risque-badge";
 import { risqueAlternant } from "@/lib/data/risque";
+import { echeancesContrat } from "@/lib/contrat";
 import {
   ajouterMission,
   ajouterPeriode,
+  enregistrerContrat,
   supprimerPeriode,
   validerBilan,
 } from "./actions";
@@ -25,7 +27,7 @@ export default async function AlternantDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { error?: string };
+  searchParams: { error?: string; contrat?: string };
 }) {
   const user = await requireRole(["TUTEUR"]);
   const alternant = await getAlternantOwnedByTuteur(params.id, user.entityId!);
@@ -33,6 +35,10 @@ export default async function AlternantDetailPage({
 
   const rythme = parseRythme(alternant.rythmeAlternance);
   const today = new Date().toISOString().slice(0, 10);
+
+  const debutIso = alternant.dateDebutContrat?.toISOString().slice(0, 10) ?? "";
+  const finIso = alternant.dateFinContrat?.toISOString().slice(0, 10) ?? "";
+  const echeances = echeancesContrat({ debutIso, finIso }, today);
 
   const missions = await prisma.mission.findMany({
     where: { alternantId: alternant.id },
@@ -81,11 +87,108 @@ export default async function AlternantDetailPage({
         <RisqueCard risque={risque} />
       </section>
 
+      {searchParams.contrat && (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          Informations de contrat enregistrées.
+        </p>
+      )}
       {searchParams.error && (
         <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {searchParams.error}
         </p>
       )}
+
+      {/* Conformité administrative : échéances légales du contrat. */}
+      <section className="mt-6 rounded-2xl border bg-card p-5 shadow-soft">
+        <h2 className="text-sm font-semibold text-foreground">
+          Contrat &amp; échéances légales
+        </h2>
+        <form
+          action={enregistrerContrat.bind(null, alternant.id)}
+          className="mt-3 grid gap-3 sm:grid-cols-3"
+        >
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-foreground">
+              Début du contrat
+            </span>
+            <input
+              type="date"
+              name="dateDebut"
+              defaultValue={debutIso}
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-foreground">
+              Fin du contrat
+            </span>
+            <input
+              type="date"
+              name="dateFin"
+              defaultValue={finIso}
+              className={inputClass}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-foreground">
+              OPCO
+            </span>
+            <input
+              type="text"
+              name="opco"
+              defaultValue={alternant.opco ?? ""}
+              placeholder="ex. OPCO EP"
+              className={inputClass}
+            />
+          </label>
+          <div className="sm:col-span-3">
+            <button
+              type="submit"
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              Enregistrer le contrat
+            </button>
+          </div>
+        </form>
+
+        {echeances.length > 0 && (
+          <ul className="mt-4 space-y-2">
+            {echeances.map((e) => {
+              const enRetard = e.joursRestants < 0;
+              const proche = !enRetard && e.joursRestants <= 30;
+              const libelle =
+                e.type === "PERIODE_PROBATOIRE"
+                  ? "Fin de période probatoire (45 j)"
+                  : "Fin de contrat";
+              const info = enRetard
+                ? "échéance passée"
+                : `dans ${e.joursRestants} j`;
+              return (
+                <li
+                  key={e.type}
+                  className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 text-sm ${
+                    enRetard
+                      ? "border-red-200 bg-red-50/60 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200"
+                      : proche
+                        ? "border-amber-200 bg-amber-50/60 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"
+                        : "bg-muted text-foreground"
+                  }`}
+                >
+                  <span className="font-medium">{libelle}</span>
+                  <span>
+                    {e.dateIso}{" "}
+                    <span className="text-xs opacity-80">({info})</span>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <p className="mt-3 text-xs text-muted-foreground">
+          Des rappels automatiques sont envoyés à l&apos;approche de la fin de
+          période probatoire (7 j) et de la fin de contrat (30 j).
+        </p>
+      </section>
 
       <section className="mt-6">
         <h2 className="mb-3 text-sm font-semibold text-foreground">

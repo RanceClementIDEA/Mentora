@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { impersonner } from "./actions";
@@ -45,6 +46,20 @@ export default async function SuperAdminPage() {
           Consultez n&apos;importe quel espace (tuteur, alternant, CFA, admin) en
           basculant sur l&apos;identité correspondante.
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link
+            href="/superadmin/cfa"
+            className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Centres de formation (CFA)
+          </Link>
+          <Link
+            href="/superadmin/journal"
+            className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Journal d&apos;audit
+          </Link>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
