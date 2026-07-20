@@ -35,6 +35,19 @@ export default function RegisterPage({
           />
         </label>
         <label className="block">
+          <span className="mb-1 block text-sm font-medium text-foreground">
+            Nom de votre entreprise
+          </span>
+          <input
+            name="organisation"
+            type="text"
+            autoComplete="organization"
+            required
+            placeholder="ex. Menuiserie Dubois"
+            className="w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+        </label>
+        <label className="block">
           <span className="mb-1 block text-sm font-medium text-foreground">Email</span>
           <input
             name="email"

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { dashboardPathForRole, requireRole } from "@/lib/auth";
 import { etatAbonnement } from "@/lib/data/abonnement";
 import { paiementConfigure } from "@/lib/stripe";
 import { creerCheckout, ouvrirPortail } from "./actions";
@@ -17,13 +17,14 @@ export default async function AbonnementPage({
 }: {
   searchParams: { success?: string; canceled?: string; limite?: string; error?: string };
 }) {
-  const user = await requireRole(["ADMIN"]);
+  const user = await requireRole(["TUTEUR", "ADMIN"]);
+  const retour = dashboardPathForRole(user.role);
 
   if (!user.organisationId) {
     return (
       <div>
-        <Link href="/admin" className="text-sm text-primary hover:underline">
-          ← Administration
+        <Link href={retour} className="text-sm text-primary hover:underline">
+          ← Retour
         </Link>
         <p className="mt-4 text-sm text-muted-foreground">
           Votre compte n&apos;est rattaché à aucune organisation.
@@ -37,8 +38,8 @@ export default async function AbonnementPage({
 
   return (
     <div className="max-w-2xl">
-      <Link href="/admin" className="text-sm text-primary hover:underline">
-        ← Administration
+      <Link href={retour} className="text-sm text-primary hover:underline">
+        ← Retour
       </Link>
 
       <h1 className="mt-3 text-xl font-semibold text-foreground">Abonnement</h1>

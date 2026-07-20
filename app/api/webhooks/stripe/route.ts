@@ -48,25 +48,35 @@ export async function POST(request: Request) {
       const organisationId = session.metadata?.organisationId;
       const customerId =
         typeof session.customer === "string" ? session.customer : null;
+      const subscriptionId =
+        typeof session.subscription === "string" ? session.subscription : null;
       if (organisationId) {
         await prisma.abonnement.updateMany({
           where: { organisationId },
           data: {
             statut: StatutAbonnement.ACTIVE,
             ...(customerId ? { stripeCustomerId: customerId } : {}),
+            ...(subscriptionId ? { stripeSubscriptionId: subscriptionId } : {}),
           },
         });
       }
       break;
     }
+    case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const sub = event.data.object;
       const customerId = typeof sub.customer === "string" ? sub.customer : null;
+      // La 1re ligne de l'abonnement = quantité facturée (nb d'alternants).
+      const itemId = sub.items?.data?.[0]?.id ?? null;
       if (customerId) {
         await prisma.abonnement.updateMany({
           where: { stripeCustomerId: customerId },
-          data: { statut: versStatut(sub.status) },
+          data: {
+            statut: versStatut(sub.status),
+            stripeSubscriptionId: sub.id,
+            ...(itemId ? { stripeSubscriptionItemId: itemId } : {}),
+          },
         });
       }
       break;

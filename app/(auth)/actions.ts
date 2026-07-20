@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
-import { dashboardPathForRole, getAppUser } from "@/lib/auth";
+import { getAppUser, homePathForUser } from "@/lib/auth";
+import { IMPERSONATION_COOKIE } from "@/lib/superadmin";
+import { cookies } from "next/headers";
 
 function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -27,7 +29,7 @@ export async function signIn(formData: FormData): Promise<void> {
 
   const user = await getAppUser();
   revalidatePath("/", "layout");
-  redirect(dashboardPathForRole(user?.role ?? null));
+  redirect(user ? homePathForUser(user) : "/login");
 }
 
 /**
@@ -37,10 +39,11 @@ export async function signIn(formData: FormData): Promise<void> {
  */
 export async function signUp(formData: FormData): Promise<void> {
   const nom = String(formData.get("nom") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
+  const organisation = String(formData.get("organisation") ?? "").trim();
 
-  if (!nom || !email || !password) {
+  if (!nom || !email || !password || !organisation) {
     redirect("/register?error=" + encodeURIComponent("Tous les champs sont requis."));
   }
   if (password.length < 8) {
@@ -63,13 +66,19 @@ export async function signUp(formData: FormData): Promise<void> {
     redirect("/register?error=" + encodeURIComponent(error.message));
   }
 
-  // Provisionne la fiche `User` via Prisma (connexion directe à la base :
-  // indépendante de la confirmation e-mail). Idempotent par e-mail.
-  await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: { email, nom, role: "TUTEUR" },
-  });
+  // Provisionne l'organisation + le tuteur + un abonnement d'essai via Prisma
+  // (connexion directe : indépendante de la confirmation e-mail). Idempotent :
+  // si le tuteur existe déjà, on ne recrée rien.
+  const existant = await prisma.user.findUnique({ where: { email } });
+  if (!existant) {
+    await prisma.organisation.create({
+      data: {
+        nom: organisation,
+        users: { create: { email, nom, role: "TUTEUR" } },
+        abonnement: { create: { nbAlternants: 0, statut: "TRIAL" } },
+      },
+    });
+  }
 
   // Confirmation e-mail désactivée → session immédiate ; sinon on invite à confirmer.
   if (data.session) {
@@ -83,6 +92,8 @@ export async function signUp(formData: FormData): Promise<void> {
 export async function signOut(): Promise<void> {
   const supabase = createClient();
   await supabase.auth.signOut();
+  // Nettoie une éventuelle bascule d'identité (mode super-admin).
+  cookies().delete(IMPERSONATION_COOKIE);
   revalidatePath("/", "layout");
   redirect("/login");
 }

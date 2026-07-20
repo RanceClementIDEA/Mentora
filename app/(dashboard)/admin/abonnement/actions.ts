@@ -14,7 +14,7 @@ function erreur(msg: string): never {
 
 /** Crée une session Stripe Checkout (abonnement métré au nb d'alternants). */
 export async function creerCheckout(): Promise<void> {
-  const user = await requireRole(["ADMIN"]);
+  const user = await requireRole(["TUTEUR", "ADMIN"]);
   if (!user.organisationId) erreur("Aucune organisation rattachée.");
   const organisationId = user.organisationId;
 
@@ -72,7 +72,7 @@ export async function creerCheckout(): Promise<void> {
 
 /** Ouvre le portail de facturation Stripe (gestion / annulation). */
 export async function ouvrirPortail(): Promise<void> {
-  const user = await requireRole(["ADMIN"]);
+  const user = await requireRole(["TUTEUR", "ADMIN"]);
   if (!user.organisationId) erreur("Aucune organisation rattachée.");
 
   const stripe = getStripe();

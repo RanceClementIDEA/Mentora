@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
 import { etatAbonnement } from "@/lib/data/abonnement";
+import { inviterUtilisateur } from "@/lib/invitations";
+import { synchroniserQuantiteStripe } from "@/lib/stripe-sync";
 
 const base = "/admin/alternants";
 
@@ -47,6 +49,12 @@ export async function ajouterAlternant(formData: FormData): Promise<void> {
   await prisma.alternant.create({
     data: { nom, email, organisationId, tuteurId, diplomeId },
   });
+
+  // Recale la quantité facturée Stripe sur le nouvel effectif (best-effort).
+  await synchroniserQuantiteStripe(organisationId);
+
+  // Invitation par e-mail (best-effort).
+  await inviterUtilisateur(email);
 
   revalidatePath(base);
   redirect(base);

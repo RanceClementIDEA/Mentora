@@ -125,6 +125,33 @@ async function main() {
     }
   }
 
+  // ── CFA (centre de formation) + rattachement des diplômes ─────
+  const cfa = await prisma.cfa.upsert({
+    where: { id: "seed-cfa-1" },
+    update: {},
+    create: { id: "seed-cfa-1", nom: "CFA des Métiers d'Art" },
+  });
+
+  await prisma.referentiel.updateMany({
+    where: {
+      id: { in: ["seed-ref-tma", "seed-ref-gpme", "seed-ref-logistique"] },
+    },
+    data: { cfaId: cfa.id },
+  });
+
+  // Référent CFA : accès en lecture seule à l'espace CFA (/cfa).
+  const referent = await prisma.user.upsert({
+    where: { email: "referent@cfa-metiersdart.fr" },
+    update: {},
+    create: {
+      id: "seed-user-cfa",
+      email: "referent@cfa-metiersdart.fr",
+      nom: "Sacha Bernard",
+      role: Role.CFA_REFERENT,
+      cfaId: cfa.id,
+    },
+  });
+
   // ── Alternants ────────────────────────────────────────────────
   // Rythme d'alternance : 2 semaines entreprise / 1 semaine école.
   const rythmeAlternance = [
@@ -244,6 +271,7 @@ async function main() {
   console.log(`   • Organisation : ${organisation.nom}`);
   console.log(`   • Tuteur       : ${tuteur.nom} (${tuteur.email})`);
   console.log(`   • Référentiels : ${referentiel.nom} + ${catalogue.length} au catalogue`);
+  console.log(`   • CFA          : ${cfa.nom} — référent ${referent.nom} (${referent.email})`);
   console.log(`   • Alternants   : ${alternant1.nom}, ${alternant2.nom}`);
   console.log(`   • Missions     : ${missionsData.length} · Bilans : 1 · Notifications : 1`);
 }

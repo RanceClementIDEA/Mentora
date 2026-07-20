@@ -35,13 +35,29 @@ model User {
   email            String        @unique
   nom              String
   role             Role          @default(TUTEUR)
+  // Téléphone (optionnel) pour les alertes SMS/WhatsApp.
+  telephone        String?
   organisationId   String?
   organisation     Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+  // Rattachement à un CFA (renseigné pour les référents CFA).
+  cfaId            String?
+  cfa              Cfa?          @relation(fields: [cfaId], references: [id], onDelete: SetNull)
   alternantsSuivis Alternant[]   @relation("TuteurAlternants")
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
   @@index([organisationId])
+  @@index([cfaId])
+}
+
+// ── CFA : centre de formation (référents + diplômes suivis) ─────
+model Cfa {
+  id           String        @id @default(cuid())
+  nom          String
+  referents    User[]
+  referentiels Referentiel[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 enum Role {
@@ -55,6 +71,8 @@ model Alternant {
   id               String       @id @default(cuid())
   nom              String
   email            String       @unique
+  // Téléphone (optionnel) pour les alertes SMS/WhatsApp.
+  telephone        String?
   organisationId   String
   organisation     Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   tuteurId         String
@@ -79,12 +97,15 @@ model Alternant {
 model Referentiel {
   id          String       @id @default(cuid())
   nom         String // ex : "BUT GEA", "Licence Pro Logistique"
-  // Rattachement à un CFA (le modèle CFA sera introduit en V2 — Phase 9).
+  // Rattachement à un CFA (facultatif) : sert de périmètre au référent CFA.
   cfaId       String?
+  cfa         Cfa?         @relation(fields: [cfaId], references: [id], onDelete: SetNull)
   competences Competence[]
   alternants  Alternant[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([cfaId])
 }
 
 // ── Competence : bloc de compétences d'un référentiel ───────────
@@ -161,14 +182,18 @@ enum Canal {
 
 // ── Abonnement : facturation Stripe, métrée à l'alternant ───────
 model Abonnement {
-  id               String           @id @default(cuid())
-  organisationId   String           @unique
-  organisation     Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-  stripeCustomerId String?
-  nbAlternants     Int              @default(0)
-  statut           StatutAbonnement @default(TRIAL)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                       String           @id @default(cuid())
+  organisationId           String           @unique
+  organisation             Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  stripeCustomerId         String?
+  // Abonnement Stripe + ligne facturée : permettent de recaler la quantité
+  // (nb d'alternants) en temps réel à chaque ajout/retrait.
+  stripeSubscriptionId     String?
+  stripeSubscriptionItemId String?
+  nbAlternants             Int              @default(0)
+  statut                   StatutAbonnement @default(TRIAL)
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
 }
 
 enum StatutAbonnement {
