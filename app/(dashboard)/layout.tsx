@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { requireUser, type AppRole } from "@/lib/auth";
+import { requireUser, type AppRole, type AppUser } from "@/lib/auth";
 import { mfaDoitVerifier } from "@/lib/mfa";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { DashboardNav, type NavItem } from "@/components/nav/dashboard-nav";
 import { signOut } from "../(auth)/actions";
 import { arreterImpersonation } from "./superadmin/actions";
 
@@ -12,6 +13,41 @@ const ROLE_LABELS: Record<AppRole, string> = {
   CFA_REFERENT: "Référent CFA",
   ALTERNANT: "Alternant",
 };
+
+/** Destinations principales selon le rôle (ou le mode super-admin). */
+function navItemsPour(user: AppUser): NavItem[] {
+  if (user.isSuperAdmin && !user.impersonating) {
+    return [
+      { href: "/superadmin", label: "Mode admin" },
+      { href: "/superadmin/cfa", label: "CFA" },
+      { href: "/superadmin/journal", label: "Journal" },
+    ];
+  }
+  switch (user.role) {
+    case "TUTEUR":
+      return [
+        { href: "/tableau-de-bord", label: "Tableau de bord" },
+        { href: "/tuteur", label: "Mes alternants" },
+        { href: "/admin/abonnement", label: "Abonnement" },
+      ];
+    case "ADMIN":
+      return [
+        { href: "/tableau-de-bord", label: "Tableau de bord" },
+        { href: "/admin", label: "Administration" },
+        { href: "/admin/membres", label: "Membres" },
+        { href: "/admin/abonnement", label: "Abonnement" },
+      ];
+    case "ALTERNANT":
+      return [
+        { href: "/alternant", label: "Mon suivi" },
+        { href: "/alternant/bilan", label: "Mon bilan" },
+      ];
+    case "CFA_REFERENT":
+      return [{ href: "/cfa", label: "Espace CFA" }];
+    default:
+      return [];
+  }
+}
 
 export default async function DashboardLayout({
   children,
@@ -29,6 +65,9 @@ export default async function DashboardLayout({
       : user.role
         ? ROLE_LABELS[user.role]
         : "Compte en attente";
+
+  const items = navItemsPour(user);
+  const accueil = user.isSuperAdmin && !user.impersonating ? "/superadmin" : "/";
 
   return (
     <div className="min-h-screen bg-muted">
@@ -58,39 +97,49 @@ export default async function DashboardLayout({
           </div>
         </div>
       )}
-      <header className="border-b bg-card no-print">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="text-lg font-bold tracking-tight">
-            Altern<span className="text-primary">Pilot</span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="no-print sticky top-0 z-20 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="flex items-center justify-between gap-3 py-3">
             <Link
-              href="/mon-compte"
-              className="min-w-0 text-right transition-opacity hover:opacity-80"
+              href={accueil}
+              className="text-lg font-bold tracking-tight transition-opacity hover:opacity-80"
             >
-              <div className="truncate text-sm font-medium text-foreground">
-                {user.nom}
-              </div>
-              <div className="truncate text-xs text-muted-foreground">
-                {roleLabel}
-              </div>
+              Altern<span className="text-primary">Pilot</span>
             </Link>
-            <ThemeToggle />
-            <form action={signOut}>
-              <button
-                type="submit"
-                aria-label="Déconnexion"
-                className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/mon-compte"
+                className="min-w-0 text-right transition-opacity hover:opacity-80"
               >
-                <span className="hidden sm:inline" aria-hidden>
-                  Déconnexion
-                </span>
-                <span className="sm:hidden" aria-hidden>
-                  Quitter
-                </span>
-              </button>
-            </form>
+                <div className="truncate text-sm font-medium text-foreground">
+                  {user.nom}
+                </div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {roleLabel}
+                </div>
+              </Link>
+              <ThemeToggle />
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  aria-label="Déconnexion"
+                  className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+                >
+                  <span className="hidden sm:inline" aria-hidden>
+                    Déconnexion
+                  </span>
+                  <span className="sm:hidden" aria-hidden>
+                    Quitter
+                  </span>
+                </button>
+              </form>
+            </div>
           </div>
+          {items.length > 0 && (
+            <div className="pb-2">
+              <DashboardNav items={items} />
+            </div>
+          )}
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>

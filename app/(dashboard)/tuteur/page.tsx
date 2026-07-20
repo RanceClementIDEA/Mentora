@@ -51,20 +51,6 @@ export default async function TuteurPage({
               : `Offre gratuite : ${placesGratuitesRestantes(etat.nbAlternants)} place(s) restante(s).`}
           </p>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href="/tableau-de-bord"
-            className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Tableau de bord
-          </Link>
-          <Link
-            href="/admin/abonnement"
-            className="rounded-xl border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Abonnement
-          </Link>
-        </div>
       </div>
 
       {searchParams.ajout && (
