@@ -11,9 +11,12 @@ import { RisqueCard } from "@/components/risque/risque-badge";
 import { risqueAlternant } from "@/lib/data/risque";
 import { echeancesContrat } from "@/lib/contrat";
 import {
+  ajouterAction,
   ajouterMission,
   ajouterPeriode,
+  basculerAction,
   enregistrerContrat,
+  supprimerAction,
   supprimerPeriode,
   validerBilan,
 } from "./actions";
@@ -53,6 +56,11 @@ export default async function AlternantDetailPage({
 
   const risque = await risqueAlternant(alternant.id, today);
 
+  const actions = await prisma.actionSuivi.findMany({
+    where: { alternantId: alternant.id },
+    orderBy: [{ fait: "asc" }, { createdAt: "asc" }],
+  });
+
   const inputClass =
     "w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
 
@@ -85,6 +93,95 @@ export default async function AlternantDetailPage({
 
       <section className="mt-4">
         <RisqueCard risque={risque} />
+      </section>
+
+      {/* Plan d'action : suite concrète donnée au score de risque. */}
+      <section className="mt-4 rounded-2xl border bg-card p-5 shadow-soft">
+        <h2 className="text-sm font-semibold text-foreground">Plan d&apos;action</h2>
+        {risque.niveau !== "FAIBLE" &&
+          actions.filter((a) => !a.fait).length === 0 && (
+            <p className="mt-1 text-sm text-amber-800 dark:text-amber-200">
+              Cet alternant est à surveiller : consignez au moins une action de
+              suivi.
+            </p>
+          )}
+
+        {actions.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {actions.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-center gap-3 rounded-xl border bg-background px-3 py-2"
+              >
+                <form action={basculerAction.bind(null, a.id)}>
+                  <button
+                    type="submit"
+                    aria-label={a.fait ? "Marquer à faire" : "Marquer fait"}
+                    className={`flex h-5 w-5 items-center justify-center rounded border text-xs ${
+                      a.fait
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : "border-muted-foreground/40 text-transparent hover:border-primary"
+                    }`}
+                  >
+                    ✓
+                  </button>
+                </form>
+                <span
+                  className={`flex-1 text-sm ${
+                    a.fait
+                      ? "text-muted-foreground line-through"
+                      : "text-foreground"
+                  }`}
+                >
+                  {a.titre}
+                  {a.echeance && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      · pour le {a.echeance.toISOString().slice(0, 10)}
+                    </span>
+                  )}
+                </span>
+                <form action={supprimerAction.bind(null, a.id)}>
+                  <button
+                    type="submit"
+                    aria-label="Supprimer l'action"
+                    className="rounded-md px-1.5 py-0.5 text-xs text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/15"
+                  >
+                    <span aria-hidden>✕</span>
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form
+          action={ajouterAction.bind(null, alternant.id)}
+          className="mt-3 flex flex-wrap items-end gap-2"
+        >
+          <label className="flex-1">
+            <span className="mb-1 block text-xs font-medium text-foreground">
+              Nouvelle action
+            </span>
+            <input
+              name="titre"
+              required
+              placeholder="ex. Programmer un point individuel"
+              className={inputClass}
+            />
+          </label>
+          <label>
+            <span className="mb-1 block text-xs font-medium text-foreground">
+              Échéance (option.)
+            </span>
+            <input type="date" name="echeance" className={inputClass} />
+          </label>
+          <button
+            type="submit"
+            className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Ajouter
+          </button>
+        </form>
       </section>
 
       {searchParams.contrat && (

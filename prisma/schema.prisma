@@ -87,6 +87,7 @@ model Alternant {
   opco             String? // opérateur de compétences rattaché
   missions         Mission[]
   bilans           BilanHebdo[]
+  actions          ActionSuivi[]
   // Score de décrochage 0-100 calculé par l'IA (renseigné en V2 — Phase 10).
   scoreRisque      Int?
   createdAt        DateTime     @default(now())
@@ -182,6 +183,20 @@ enum Canal {
   EMAIL
   SMS
   WHATSAPP
+}
+
+// ── ActionSuivi : plan d'action déclenché par un signal de risque ─
+model ActionSuivi {
+  id          String    @id @default(cuid())
+  alternantId String
+  alternant   Alternant @relation(fields: [alternantId], references: [id], onDelete: Cascade)
+  titre       String
+  echeance    DateTime?
+  fait        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([alternantId])
 }
 
 // ── AuditLog : traçabilité des accès sensibles (mode super-admin) ─

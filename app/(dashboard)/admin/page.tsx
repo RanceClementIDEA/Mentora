@@ -18,6 +18,11 @@ export default async function AdminPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
           {
+            href: "/tableau-de-bord",
+            titre: "Tableau de bord",
+            detail: "Portefeuille : statuts, échéances, risques",
+          },
+          {
             href: "/admin/membres",
             titre: "Accès & membres",
             detail: "Inviter, promouvoir tuteurs & admins",

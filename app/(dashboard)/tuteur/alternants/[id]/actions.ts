@@ -198,6 +198,60 @@ export async function enregistrerContrat(
   redirect(`${base(alternantId)}?contrat=1`);
 }
 
+/** Vérifie qu'une action de suivi porte sur un alternant du tuteur courant. */
+async function assertActionOwned(actionId: string) {
+  const user = await requireRole(["TUTEUR"]);
+  const action = await prisma.actionSuivi.findUnique({
+    where: { id: actionId },
+    include: { alternant: { select: { id: true, tuteurId: true } } },
+  });
+  if (!action || action.alternant.tuteurId !== user.entityId) {
+    redirect("/tuteur");
+  }
+  return action;
+}
+
+/** Ajoute une action au plan de suivi (rebond sur le score de risque). */
+export async function ajouterAction(
+  alternantId: string,
+  formData: FormData,
+): Promise<void> {
+  await assertOwned(alternantId);
+  const titre = String(formData.get("titre") ?? "").trim();
+  if (!titre) {
+    redirect(
+      `${base(alternantId)}?error=${encodeURIComponent("Intitulé de l'action requis.")}`,
+    );
+  }
+  const echeanceRaw = String(formData.get("echeance") ?? "").trim();
+  const echeance = /^\d{4}-\d{2}-\d{2}$/.test(echeanceRaw)
+    ? new Date(`${echeanceRaw}T00:00:00.000Z`)
+    : null;
+
+  await prisma.actionSuivi.create({ data: { alternantId, titre, echeance } });
+  revalidatePath(base(alternantId));
+  redirect(base(alternantId));
+}
+
+/** Marque une action comme faite / à faire. */
+export async function basculerAction(actionId: string): Promise<void> {
+  const action = await assertActionOwned(actionId);
+  await prisma.actionSuivi.update({
+    where: { id: actionId },
+    data: { fait: !action.fait },
+  });
+  revalidatePath(base(action.alternant.id));
+  redirect(base(action.alternant.id));
+}
+
+/** Supprime une action du plan de suivi. */
+export async function supprimerAction(actionId: string): Promise<void> {
+  const action = await assertActionOwned(actionId);
+  await prisma.actionSuivi.delete({ where: { id: actionId } });
+  revalidatePath(base(action.alternant.id));
+  redirect(base(action.alternant.id));
+}
+
 /** Supprime la période à l'index donné. */
 export async function supprimerPeriode(
   alternantId: string,
