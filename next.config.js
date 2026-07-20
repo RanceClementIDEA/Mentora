@@ -19,8 +19,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      // Supabase (Auth, REST, Realtime) : autorise l'API du projet.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      // Supabase (Auth, REST, Realtime) + Sentry + PostHog (analytics).
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://*.posthog.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -33,10 +33,21 @@ const nextConfig = {
   // Ces paquets Node ne doivent pas être bundlés par webpack (binaires/optional deps).
   experimental: {
     serverComponentsExternalPackages: ["playwright-core", "exceljs"],
+    // Active le chargement d'instrumentation.ts (init Sentry serveur/edge).
+    instrumentationHook: true,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
 };
 
-module.exports = nextConfig;
+// Enrobage Sentry. Sans DSN, le SDK est inerte ; l'upload de source maps est
+// désactivé pour que le build passe sans jeton d'authentification Sentry.
+const { withSentryConfig } = require("@sentry/nextjs");
+
+module.exports = withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+  disableLogger: true,
+  sourcemaps: { disable: true },
+});
