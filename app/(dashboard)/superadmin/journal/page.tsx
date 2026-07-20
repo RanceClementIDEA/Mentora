@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/auth";
 import { getJournalAudit } from "@/lib/data/audit";
+import { StatusPill } from "@/components/status-pill";
 
 export const metadata = { title: "Journal d'audit · AlternPilot" };
 
@@ -21,7 +22,8 @@ export default async function JournalAuditPage() {
   await requireSuperAdmin();
   const entrees = await getJournalAudit(200);
 
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-middle";
 
   return (
@@ -55,19 +57,15 @@ export default async function JournalAuditPage() {
             <tbody>
               {entrees.map((e) => (
                 <tr key={e.id} className="border-b last:border-0">
-                  <td className={`${td} whitespace-nowrap text-muted-foreground`}>
+                  <td className={`${td} tabular-nums whitespace-nowrap text-muted-foreground`}>
                     {formatDateHeure(e.createdAt)}
                   </td>
                   <td className={td}>
-                    <span
-                      className={`rounded-lg px-2 py-0.5 text-xs font-medium ${
-                        e.action === "IMPERSONATION_START"
-                          ? "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+                    <StatusPill
+                      tone={e.action === "IMPERSONATION_START" ? "warn" : "neutral"}
                     >
                       {ACTION_LABELS[e.action] ?? e.action}
-                    </span>
+                    </StatusPill>
                   </td>
                   <td className={`${td} text-muted-foreground`}>{e.acteurEmail}</td>
                   <td className={`${td} text-foreground`}>

@@ -1,21 +1,21 @@
 import { libelleNiveau, type Risque } from "@/lib/risque";
+import { StatusPill, type PillTone } from "@/components/status-pill";
 
-const STYLES: Record<Risque["niveau"], string> = {
-  FAIBLE: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
-  MODERE: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100",
-  ELEVE: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-200",
+const TONE: Record<Risque["niveau"], PillTone> = {
+  FAIBLE: "good",
+  MODERE: "warn",
+  ELEVE: "crit",
 };
 
 /** Pastille de niveau de risque (compacte, pour les listes/cartes). */
 export function RisqueBadge({ risque }: { risque: Risque }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-medium ${STYLES[risque.niveau]}`}
+    <StatusPill
+      tone={TONE[risque.niveau]}
       title={risque.facteurs.join(" · ") || "Aucun signal d'alerte"}
     >
-      <span aria-hidden>●</span>
       {libelleNiveau(risque.niveau)}
-    </span>
+    </StatusPill>
   );
 }
 

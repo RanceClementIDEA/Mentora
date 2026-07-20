@@ -143,6 +143,17 @@ export default async function DashboardLayout({
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
+      <footer className="no-print mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-8 text-xs text-muted-foreground">
+        <Link href="/mentions-legales" className="hover:underline">
+          Mentions légales
+        </Link>
+        <Link href="/confidentialite" className="hover:underline">
+          Confidentialité
+        </Link>
+        <Link href="/conditions-generales" className="hover:underline">
+          Conditions générales
+        </Link>
+      </footer>
     </div>
   );
 }

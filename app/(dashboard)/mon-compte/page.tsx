@@ -37,7 +37,7 @@ export default async function MonComptePage({
       </dl>
 
       {searchParams.tel && (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
           Téléphone enregistré.
         </p>
       )}
@@ -52,7 +52,7 @@ export default async function MonComptePage({
         </p>
       )}
       {searchParams.error && (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           {searchParams.error}
         </p>
       )}
@@ -145,9 +145,11 @@ export default async function MonComptePage({
         </a>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-red-200 bg-red-50/50 p-5">
-        <h2 className="text-sm font-semibold text-red-700">Supprimer mon compte</h2>
-        <p className="mt-1 text-sm text-red-700/90">
+      <section className="mt-6 rounded-2xl border border-red-200 bg-red-50/50 p-5 dark:border-red-500/30 dark:bg-red-500/10">
+        <h2 className="text-sm font-semibold text-red-700 dark:text-red-300">
+          Supprimer mon compte
+        </h2>
+        <p className="mt-1 text-sm text-red-700/90 dark:text-red-200/90">
           Action définitive : votre compte et vos données personnelles seront
           supprimés. {user.role === "ALTERNANT"
             ? "Vos missions et bilans seront effacés."
@@ -155,7 +157,7 @@ export default async function MonComptePage({
         </p>
         <form action={supprimerMonCompte} className="mt-4 space-y-3">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-red-700">
+            <span className="mb-1 block text-xs font-medium text-red-700 dark:text-red-300">
               Tapez SUPPRIMER pour confirmer
             </span>
             <input
@@ -163,7 +165,7 @@ export default async function MonComptePage({
               type="text"
               autoComplete="off"
               placeholder="SUPPRIMER"
-              className="w-full max-w-xs rounded-xl border border-red-300 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400"
+              className="w-full max-w-xs rounded-xl border border-red-300 bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-400 dark:border-red-500/40 dark:focus:ring-red-500/60"
             />
           </label>
           <button

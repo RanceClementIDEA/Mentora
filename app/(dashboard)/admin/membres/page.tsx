@@ -28,7 +28,8 @@ export default async function MembresPage({
 
   const inputClass =
     "w-full rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring";
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-middle";
 
   return (
@@ -108,7 +109,7 @@ export default async function MembresPage({
                       </button>
                     </form>
                   </td>
-                  <td className={`${td} text-muted-foreground`}>
+                  <td className={`${td} tabular-nums text-muted-foreground`}>
                     {m.role === "TUTEUR" ? m._count.alternantsSuivis : "—"}
                   </td>
                   <td className={`${td} text-right`}>

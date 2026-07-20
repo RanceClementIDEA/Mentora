@@ -22,7 +22,8 @@ export default async function ModelesRythmePage({
     ? await getModelesForOrg(user.organisationId)
     : [];
 
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-middle";
 
   return (
@@ -65,10 +66,10 @@ export default async function ModelesRythmePage({
               {modeles.map((m) => (
                 <tr key={m.id} className="border-b last:border-0">
                   <td className={`${td} font-medium text-foreground`}>{m.nom}</td>
-                  <td className={`${td} text-muted-foreground`}>
+                  <td className={`${td} tabular-nums text-muted-foreground`}>
                     {parseRythme(m.rythme).length}
                   </td>
-                  <td className={`${td} text-muted-foreground`}>
+                  <td className={`${td} tabular-nums text-muted-foreground`}>
                     {formatDate(m.createdAt)}
                   </td>
                   <td className={`${td} text-right`}>

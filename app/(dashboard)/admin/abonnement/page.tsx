@@ -2,6 +2,7 @@ import Link from "next/link";
 import { dashboardPathForRole, requireRole } from "@/lib/auth";
 import { etatAbonnement } from "@/lib/data/abonnement";
 import { paiementConfigure } from "@/lib/stripe";
+import { StatusPill } from "@/components/status-pill";
 import { creerCheckout, ouvrirPortail } from "./actions";
 
 export const metadata = { title: "Abonnement · AlternPilot" };
@@ -48,7 +49,7 @@ export default async function AbonnementPage({
       </p>
 
       {searchParams.success && (
-        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
           Merci ! Votre abonnement est en cours d&apos;activation.
         </p>
       )}
@@ -58,12 +59,12 @@ export default async function AbonnementPage({
         </p>
       )}
       {searchParams.limite && (
-        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
           Limite de l&apos;offre gratuite atteinte : abonnez-vous pour ajouter d&apos;autres alternants.
         </p>
       )}
       {searchParams.error && (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           {searchParams.error}
         </p>
       )}
@@ -78,15 +79,9 @@ export default async function AbonnementPage({
               {etat.actif ? "Payant (métré)" : "Gratuit"}
             </div>
           </div>
-          <span
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium ${
-              etat.actif
-                ? "bg-emerald-100 text-emerald-800"
-                : "bg-accent text-accent-foreground"
-            }`}
-          >
+          <StatusPill tone={etat.actif ? "good" : "neutral"}>
             {etat.statut ? LIBELLE_STATUT[etat.statut] : "Gratuit"}
-          </span>
+          </StatusPill>
         </div>
 
         <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">

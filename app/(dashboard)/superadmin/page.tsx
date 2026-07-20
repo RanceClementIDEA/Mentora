@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSuperAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { StatTile } from "@/components/stat-tile";
 import { impersonner } from "./actions";
 
 export const metadata = { title: "Mode administrateur · AlternPilot" };
@@ -31,7 +32,8 @@ export default async function SuperAdminPage() {
     }),
   ]);
 
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-middle";
   const btn =
     "rounded-lg border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent";
@@ -63,8 +65,8 @@ export default async function SuperAdminPage() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Stat label="Comptes (tuteurs, admins, CFA)" valeur={users.length} />
-        <Stat label="Alternants" valeur={alternants.length} />
+        <StatTile label="Comptes (tuteurs, admins, CFA)" valeur={users.length} />
+        <StatTile label="Alternants" valeur={alternants.length} />
       </div>
 
       {/* ── Comptes ──────────────────────────────────────────── */}
@@ -156,15 +158,6 @@ export default async function SuperAdminPage() {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-function Stat({ label, valeur }: { label: string; valeur: number }) {
-  return (
-    <div className="rounded-2xl border bg-card p-5 shadow-soft">
-      <div className="text-2xl font-bold text-foreground">{valeur}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import { GenererResume } from "@/components/bilan/generer-resume";
 import { RisqueCard } from "@/components/risque/risque-badge";
 import { risqueAlternant } from "@/lib/data/risque";
 import { getModelesForOrg } from "@/lib/data/modeles";
+import { StatusPill } from "@/components/status-pill";
 import { echeancesContrat } from "@/lib/contrat";
 import {
   ajouterAction,
@@ -203,7 +204,7 @@ export default async function AlternantDetailPage({
         </p>
       )}
       {searchParams.error && (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           {searchParams.error}
         </p>
       )}
@@ -320,20 +321,14 @@ export default async function AlternantDetailPage({
                   key={`${p.debut}-${p.fin}`}
                   className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-2.5"
                 >
-                  <div className="text-sm">
-                    <span
-                      className={`mr-2 inline-block rounded px-2 py-0.5 text-xs font-medium ${
-                        p.type === "ECOLE"
-                          ? "bg-sky-100 text-sky-900"
-                          : "bg-emerald-100 text-emerald-900"
-                      }`}
-                    >
+                  <div className="flex items-center gap-2 text-sm">
+                    <StatusPill tone={p.type === "ECOLE" ? "info" : "good"}>
                       {p.type === "ECOLE" ? "École / CFA" : "Entreprise"}
-                    </span>
+                    </StatusPill>
                     <span className="text-foreground">
                       {p.debut} → {p.fin}
                     </span>
-                    <span className="ml-2 text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       ({nbJours(p)} j)
                     </span>
                   </div>
@@ -557,9 +552,7 @@ export default async function AlternantDetailPage({
                     {libellePeriode(b.semaine, frequence)}
                   </span>
                   {b.valideParTuteur ? (
-                    <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
-                      Validé
-                    </span>
+                    <StatusPill tone="good">Validé</StatusPill>
                   ) : (
                     <form action={validerBilan.bind(null, b.id)}>
                       <button

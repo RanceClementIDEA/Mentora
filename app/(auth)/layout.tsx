@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -18,10 +19,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="rounded-2xl border bg-card p-6 shadow-soft-lg sm:p-8">
           {children}
         </div>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          <a href="/confidentialite" className="hover:underline">
-            Politique de confidentialité
-          </a>
+        <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-muted-foreground">
+          <Link href="/mentions-legales" className="hover:underline">
+            Mentions légales
+          </Link>
+          <Link href="/confidentialite" className="hover:underline">
+            Confidentialité
+          </Link>
+          <Link href="/conditions-generales" className="hover:underline">
+            Conditions générales
+          </Link>
         </p>
       </div>
     </div>

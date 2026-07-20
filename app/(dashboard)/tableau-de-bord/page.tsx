@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getPortefeuille, type StatutSemaine } from "@/lib/data/pilotage";
 import { RisqueBadge } from "@/components/risque/risque-badge";
+import { StatTile } from "@/components/stat-tile";
+import { StatusPill, type PillTone } from "@/components/status-pill";
 
 export const metadata = { title: "Tableau de bord · AlternPilot" };
 
@@ -10,6 +12,13 @@ const STATUT_LABEL: Record<StatutSemaine, string> = {
   ENTREPRISE: "Entreprise",
   HORS: "Hors période",
   NON_SAISI: "Rythme non saisi",
+};
+
+const STATUT_TONE: Record<StatutSemaine, PillTone> = {
+  ECOLE: "info",
+  ENTREPRISE: "good",
+  HORS: "neutral",
+  NON_SAISI: "neutral",
 };
 
 export default async function TableauDeBordPage() {
@@ -42,7 +51,8 @@ export default async function TableauDeBordPage() {
   ).length;
   const actionsOuvertes = lignes.reduce((n, l) => n + l.actionsOuvertes, 0);
 
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-middle";
 
   return (
@@ -65,10 +75,22 @@ export default async function TableauDeBordPage() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Alternants" valeur={lignes.length} />
-        <Stat label="À surveiller" valeur={aSurveiller} accent={aSurveiller > 0} />
-        <Stat label="Missions en retard" valeur={retardsTotal} accent={retardsTotal > 0} />
-        <Stat label="Échéances < 30 j" valeur={echeancesProches} accent={echeancesProches > 0} />
+        <StatTile label="Alternants" valeur={lignes.length} />
+        <StatTile
+          label="À surveiller"
+          valeur={aSurveiller}
+          tone={aSurveiller > 0 ? "warn" : "default"}
+        />
+        <StatTile
+          label="Missions en retard"
+          valeur={retardsTotal}
+          tone={retardsTotal > 0 ? "crit" : "default"}
+        />
+        <StatTile
+          label="Échéances < 30 j"
+          valeur={echeancesProches}
+          tone={echeancesProches > 0 ? "warn" : "default"}
+        />
       </div>
 
       {lignes.length === 0 ? (
@@ -108,10 +130,12 @@ export default async function TableauDeBordPage() {
                   {estAdmin && (
                     <td className={`${td} text-muted-foreground`}>{l.tuteur}</td>
                   )}
-                  <td className={`${td} text-muted-foreground`}>
-                    {STATUT_LABEL[l.statutSemaine]}
-                  </td>
                   <td className={td}>
+                    <StatusPill tone={STATUT_TONE[l.statutSemaine]}>
+                      {STATUT_LABEL[l.statutSemaine]}
+                    </StatusPill>
+                  </td>
+                  <td className={`${td} tabular-nums`}>
                     {l.missionsEnRetard > 0 ? (
                       <span className="font-medium text-red-600">
                         {l.missionsEnRetard}
@@ -156,27 +180,6 @@ export default async function TableauDeBordPage() {
           {actionsOuvertes} action(s) de suivi en cours sur le portefeuille.
         </p>
       )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  valeur,
-  accent = false,
-}: {
-  label: string;
-  valeur: number;
-  accent?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border bg-card p-5 shadow-soft">
-      <div
-        className={`text-2xl font-bold ${accent ? "text-red-600" : "text-foreground"}`}
-      >
-        {valeur}
-      </div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }

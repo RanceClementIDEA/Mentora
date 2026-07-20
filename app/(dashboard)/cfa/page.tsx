@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { getCfaNom, getSyntheseCfa } from "@/lib/data/cfa";
 import { RisqueBadge } from "@/components/risque/risque-badge";
+import { StatTile } from "@/components/stat-tile";
 
 export const metadata = { title: "Espace CFA · AlternPilot" };
 
@@ -32,7 +33,8 @@ export default async function CfaPage() {
 
   const aSurveiller = lignes.filter((l) => l.risque.niveau !== "FAIBLE").length;
 
-  const th = "px-3 py-2 text-left text-xs font-semibold text-muted-foreground";
+  const th =
+    "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const td = "px-3 py-2.5 text-sm align-top";
 
   return (
@@ -46,9 +48,13 @@ export default async function CfaPage() {
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Stat label="Alternants suivis" valeur={lignes.length} />
-        <Stat label="À surveiller" valeur={aSurveiller} accent={aSurveiller > 0} />
-        <Stat
+        <StatTile label="Alternants suivis" valeur={lignes.length} />
+        <StatTile
+          label="À surveiller"
+          valeur={aSurveiller}
+          tone={aSurveiller > 0 ? "warn" : "default"}
+        />
+        <StatTile
           label="Entreprises"
           valeur={new Set(lignes.map((l) => l.entreprise)).size}
         />
@@ -90,27 +96,6 @@ export default async function CfaPage() {
           </table>
         </div>
       )}
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  valeur,
-  accent = false,
-}: {
-  label: string;
-  valeur: number;
-  accent?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl border bg-card p-5 shadow-soft">
-      <div
-        className={`text-2xl font-bold ${accent ? "text-red-600" : "text-foreground"}`}
-      >
-        {valeur}
-      </div>
-      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
     </div>
   );
 }
