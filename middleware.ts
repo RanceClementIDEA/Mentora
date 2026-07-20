@@ -3,7 +3,14 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 // Préfixes de routes exigeant une session (le contrôle fin du rôle est fait
 // dans les layouts serveur, où Prisma est disponible).
-const PROTECTED_PREFIXES = ["/tuteur", "/alternant", "/admin", "/cfa", "/superadmin"];
+const PROTECTED_PREFIXES = [
+  "/tuteur",
+  "/alternant",
+  "/admin",
+  "/cfa",
+  "/superadmin",
+  "/2fa",
+];
 const AUTH_PAGES = ["/login", "/register"];
 
 export async function middleware(request: NextRequest) {
