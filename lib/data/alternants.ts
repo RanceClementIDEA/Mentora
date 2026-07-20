@@ -9,6 +9,12 @@ export function getAlternantsForTuteur(tuteurId: string) {
   });
 }
 
+/** Le tuteur a-t-il au moins une mission sur l'un de ses alternants ? */
+export async function tuteurAUneMission(tuteurId: string): Promise<boolean> {
+  const n = await prisma.mission.count({ where: { alternant: { tuteurId } } });
+  return n > 0;
+}
+
 /**
  * Charge un alternant en vérifiant qu'il appartient bien au tuteur courant.
  * Renvoie null si l'alternant n'existe pas ou n'est pas suivi par ce tuteur
