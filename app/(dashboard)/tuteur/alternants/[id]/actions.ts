@@ -162,6 +162,70 @@ export async function validerBilan(bilanId: string): Promise<void> {
   redirect(base(bilan.alternant.id));
 }
 
+/** Applique un modèle de rythme (gabarit) au rythme de l'alternant. */
+export async function appliquerModele(
+  alternantId: string,
+  formData: FormData,
+): Promise<void> {
+  const alternant = await assertOwned(alternantId);
+  const modeleId = String(formData.get("modeleId") ?? "").trim();
+  if (!modeleId) {
+    redirect(`${base(alternantId)}?error=${encodeURIComponent("Sélectionnez un modèle.")}`);
+  }
+  const modele = await prisma.modeleRythme.findFirst({
+    where: { id: modeleId, organisationId: alternant.organisationId },
+  });
+  if (!modele) {
+    redirect(`${base(alternantId)}?error=${encodeURIComponent("Modèle introuvable.")}`);
+  }
+  await prisma.alternant.update({
+    where: { id: alternantId },
+    data: { rythmeAlternance: parseRythme(modele.rythme) },
+  });
+  revalidatePath(base(alternantId));
+  redirect(`${base(alternantId)}?modele=applique`);
+}
+
+/** Enregistre le rythme courant de l'alternant comme modèle réutilisable. */
+export async function enregistrerModele(
+  alternantId: string,
+  formData: FormData,
+): Promise<void> {
+  const alternant = await assertOwned(alternantId);
+  const nom = String(formData.get("nom") ?? "").trim();
+  if (!nom) {
+    redirect(`${base(alternantId)}?error=${encodeURIComponent("Nom du modèle requis.")}`);
+  }
+  const rythme = parseRythme(alternant.rythmeAlternance);
+  if (rythme.length === 0) {
+    redirect(
+      `${base(alternantId)}?error=${encodeURIComponent("Le rythme est vide : rien à enregistrer.")}`,
+    );
+  }
+  await prisma.modeleRythme.create({
+    data: { nom, organisationId: alternant.organisationId, rythme },
+  });
+  revalidatePath(base(alternantId));
+  redirect(`${base(alternantId)}?modele=enregistre`);
+}
+
+/** Change la cadence des bilans d'un alternant (HEBDO / BIMENSUEL / MENSUEL). */
+export async function changerFrequenceBilan(
+  alternantId: string,
+  formData: FormData,
+): Promise<void> {
+  await assertOwned(alternantId);
+  const valeur = String(formData.get("frequence") ?? "");
+  const frequence =
+    valeur === "BIMENSUEL" || valeur === "MENSUEL" ? valeur : "HEBDO";
+  await prisma.alternant.update({
+    where: { id: alternantId },
+    data: { frequenceBilan: frequence },
+  });
+  revalidatePath(base(alternantId));
+  redirect(base(alternantId));
+}
+
 /** Enregistre les informations de contrat (échéances légales) d'un alternant. */
 export async function enregistrerContrat(
   alternantId: string,

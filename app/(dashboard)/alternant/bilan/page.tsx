@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { libelleSemaine, lundiDeLaSemaine } from "@/lib/semaine";
+import {
+  debutPeriodeBilan,
+  libellePeriode,
+  normFrequence,
+} from "@/lib/semaine";
 import { GenererResume } from "@/components/bilan/generer-resume";
 import { enregistrerBilan } from "./actions";
 
@@ -13,8 +17,14 @@ export default async function BilanPage({
   searchParams: { error?: string };
 }) {
   const user = await requireRole(["ALTERNANT"]);
-  const semaine = lundiDeLaSemaine(new Date());
   const alternantId = user.entityId!;
+
+  const alternant = await prisma.alternant.findUnique({
+    where: { id: alternantId },
+    select: { frequenceBilan: true },
+  });
+  const frequence = normFrequence(alternant?.frequenceBilan);
+  const semaine = debutPeriodeBilan(new Date(), frequence);
 
   const [courant, historique] = await Promise.all([
     prisma.bilanHebdo.findUnique({
@@ -37,11 +47,9 @@ export default async function BilanPage({
         ← Mon suivi
       </Link>
 
-      <h1 className="mt-3 text-xl font-semibold text-foreground">
-        Bilan hebdomadaire
-      </h1>
+      <h1 className="mt-3 text-xl font-semibold text-foreground">Mon bilan</h1>
       <p className="mt-1 text-sm text-muted-foreground capitalize">
-        {libelleSemaine(semaine)}
+        {libellePeriode(semaine, frequence)}
         {verrouille && " · validé par le tuteur"}
       </p>
 
@@ -135,7 +143,7 @@ export default async function BilanPage({
               >
                 <div className="flex items-center justify-between">
                   <span className="capitalize text-foreground">
-                    {libelleSemaine(b.semaine)}
+                    {libellePeriode(b.semaine, frequence)}
                   </span>
                   <span
                     className={`text-xs ${

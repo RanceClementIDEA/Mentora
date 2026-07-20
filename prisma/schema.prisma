@@ -19,14 +19,29 @@ datasource db {
 
 // ── Organisation : l'entreprise cliente (la TPE/PME) ────────────
 model Organisation {
-  id         String      @id @default(cuid())
-  nom        String
-  secteur    String?
-  abonnement Abonnement?
-  users      User[]
-  alternants Alternant[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            String         @id @default(cuid())
+  nom           String
+  secteur       String?
+  abonnement    Abonnement?
+  users         User[]
+  alternants    Alternant[]
+  modelesRythme ModeleRythme[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// ── ModeleRythme : gabarit de rythme réutilisable (par promotion/CFA) ─
+model ModeleRythme {
+  id             String       @id @default(cuid())
+  nom            String
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  // Suite de périodes datées (même structure que Alternant.rythmeAlternance).
+  rythme         Json
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organisationId])
 }
 
 // ── User : tuteur, admin ou référent CFA ────────────────────────
@@ -88,6 +103,8 @@ model Alternant {
   missions         Mission[]
   bilans           BilanHebdo[]
   actions          ActionSuivi[]
+  // Cadence des bilans : "HEBDO" | "BIMENSUEL" | "MENSUEL".
+  frequenceBilan   String       @default("HEBDO")
   // Score de décrochage 0-100 calculé par l'IA (renseigné en V2 — Phase 10).
   scoreRisque      Int?
   createdAt        DateTime     @default(now())

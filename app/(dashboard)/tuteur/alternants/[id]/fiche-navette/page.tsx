@@ -5,7 +5,7 @@ import { getAlternantOwnedByTuteur } from "@/lib/data/alternants";
 import { risqueAlternant } from "@/lib/data/risque";
 import { prisma } from "@/lib/prisma";
 import { nbJours, parseRythme } from "@/lib/rythme";
-import { libelleSemaine } from "@/lib/semaine";
+import { libellePeriode, normFrequence } from "@/lib/semaine";
 import { libelleNiveau } from "@/lib/risque";
 import { PrintButton } from "@/components/print-button";
 
@@ -165,7 +165,7 @@ export default async function FicheNavettePage({
         {dernierBilan ? (
           <div className="mt-2 space-y-2 text-sm">
             <p className="text-xs font-medium capitalize text-muted-foreground">
-              {libelleSemaine(dernierBilan.semaine)}
+              {libellePeriode(dernierBilan.semaine, normFrequence(alternant.frequenceBilan))}
               {dernierBilan.valideParTuteur ? " · validé par le tuteur" : ""}
             </p>
             <FicheChamp titre="Réussites" valeur={dernierBilan.reussites} />

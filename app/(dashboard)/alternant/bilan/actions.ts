@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth";
-import { lundiDeLaSemaine } from "@/lib/semaine";
+import { debutPeriodeBilan, normFrequence } from "@/lib/semaine";
 
 /** Enregistre (crée ou met à jour) le bilan de la semaine courante. */
 export async function enregistrerBilan(formData: FormData): Promise<void> {
@@ -21,8 +21,15 @@ export async function enregistrerBilan(formData: FormData): Promise<void> {
     );
   }
 
-  const semaine = lundiDeLaSemaine(new Date());
   const alternantId = user.entityId!;
+  const alternant = await prisma.alternant.findUnique({
+    where: { id: alternantId },
+    select: { frequenceBilan: true },
+  });
+  const semaine = debutPeriodeBilan(
+    new Date(),
+    normFrequence(alternant?.frequenceBilan),
+  );
 
   const existant = await prisma.bilanHebdo.findUnique({
     where: { alternantId_semaine: { alternantId, semaine } },

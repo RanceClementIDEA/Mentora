@@ -4,18 +4,22 @@ import { requireRole } from "@/lib/auth";
 import { getAlternantOwnedByTuteur } from "@/lib/data/alternants";
 import { prisma } from "@/lib/prisma";
 import { nbJours, parseRythme } from "@/lib/rythme";
-import { libelleSemaine } from "@/lib/semaine";
+import { libelleFrequence, libellePeriode, normFrequence } from "@/lib/semaine";
 import { CalendrierAlternance } from "@/components/calendrier/calendrier-alternance";
 import { GenererResume } from "@/components/bilan/generer-resume";
 import { RisqueCard } from "@/components/risque/risque-badge";
 import { risqueAlternant } from "@/lib/data/risque";
+import { getModelesForOrg } from "@/lib/data/modeles";
 import { echeancesContrat } from "@/lib/contrat";
 import {
   ajouterAction,
   ajouterMission,
   ajouterPeriode,
+  appliquerModele,
   basculerAction,
+  changerFrequenceBilan,
   enregistrerContrat,
+  enregistrerModele,
   supprimerAction,
   supprimerPeriode,
   validerBilan,
@@ -30,7 +34,7 @@ export default async function AlternantDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { error?: string; contrat?: string };
+  searchParams: { error?: string; contrat?: string; modele?: string };
 }) {
   const user = await requireRole(["TUTEUR"]);
   const alternant = await getAlternantOwnedByTuteur(params.id, user.entityId!);
@@ -55,6 +59,8 @@ export default async function AlternantDetailPage({
   });
 
   const risque = await risqueAlternant(alternant.id, today);
+  const frequence = normFrequence(alternant.frequenceBilan);
+  const modeles = await getModelesForOrg(alternant.organisationId);
 
   const actions = await prisma.actionSuivi.findMany({
     where: { alternantId: alternant.id },
@@ -187,6 +193,13 @@ export default async function AlternantDetailPage({
       {searchParams.contrat && (
         <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
           Informations de contrat enregistrées.
+        </p>
+      )}
+      {searchParams.modele && (
+        <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+          {searchParams.modele === "applique"
+            ? "Modèle de rythme appliqué."
+            : "Rythme enregistré comme modèle."}
         </p>
       )}
       {searchParams.error && (
@@ -370,6 +383,77 @@ export default async function AlternantDetailPage({
         </div>
       </section>
 
+      {/* Modèles de rythme réutilisables (gain de temps par promotion/CFA). */}
+      <section className="mt-8 rounded-2xl border bg-card p-5 shadow-soft">
+        <h2 className="text-sm font-semibold text-foreground">
+          Modèles de rythme
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Réutilisez un rythme type en un clic, ou enregistrez le rythme actuel
+          comme modèle pour vos autres alternants.
+        </p>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <form
+            action={appliquerModele.bind(null, alternant.id)}
+            className="flex flex-wrap items-end gap-2"
+          >
+            <label className="flex-1">
+              <span className="mb-1 block text-xs font-medium text-foreground">
+                Appliquer un modèle
+              </span>
+              <select
+                name="modeleId"
+                defaultValue=""
+                required
+                className={inputClass}
+              >
+                <option value="" disabled>
+                  {modeles.length === 0 ? "Aucun modèle" : "Choisir un modèle…"}
+                </option>
+                {modeles.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.nom} ({parseRythme(m.rythme).length} période(s))
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={modeles.length === 0}
+              className="rounded-xl border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+            >
+              Appliquer
+            </button>
+          </form>
+
+          <form
+            action={enregistrerModele.bind(null, alternant.id)}
+            className="flex flex-wrap items-end gap-2"
+          >
+            <label className="flex-1">
+              <span className="mb-1 block text-xs font-medium text-foreground">
+                Enregistrer le rythme actuel
+              </span>
+              <input
+                name="nom"
+                required
+                placeholder="ex. Promo BTS 2026 — 3 sem./1 sem."
+                className={inputClass}
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-xl border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Enregistrer
+            </button>
+          </form>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Appliquer un modèle remplace le rythme actuel de cet alternant.
+        </p>
+      </section>
+
       <section className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
@@ -430,9 +514,36 @@ export default async function AlternantDetailPage({
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-3 text-sm font-semibold text-foreground">
-          Bilans hebdomadaires
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Bilans</h2>
+          <form
+            action={changerFrequenceBilan.bind(null, alternant.id)}
+            className="flex items-center gap-2"
+          >
+            <label className="text-xs text-muted-foreground" htmlFor="frequence">
+              Cadence
+            </label>
+            <select
+              id="frequence"
+              name="frequence"
+              defaultValue={frequence}
+              className="rounded-lg border bg-background px-2 py-1 text-xs outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="HEBDO">Hebdomadaire</option>
+              <option value="BIMENSUEL">Toutes les 2 semaines</option>
+              <option value="MENSUEL">Mensuel</option>
+            </select>
+            <button
+              type="submit"
+              className="rounded-lg border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Appliquer
+            </button>
+          </form>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Cadence actuelle : {libelleFrequence(frequence)}.
+        </p>
         {bilans.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Aucun bilan soumis par l&apos;alternant pour l&apos;instant.
@@ -443,7 +554,7 @@ export default async function AlternantDetailPage({
               <li key={b.id} className="rounded-2xl border bg-card p-5 shadow-soft">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium capitalize text-foreground">
-                    {libelleSemaine(b.semaine)}
+                    {libellePeriode(b.semaine, frequence)}
                   </span>
                   {b.valideParTuteur ? (
                     <span className="rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">

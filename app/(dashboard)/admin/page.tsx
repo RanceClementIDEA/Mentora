@@ -42,6 +42,11 @@ export default async function AdminPage() {
             titre: "Référentiels",
             detail: "Diplômes & compétences pré-chargés",
           },
+          {
+            href: "/admin/modeles-rythme",
+            titre: "Modèles de rythme",
+            detail: "Gabarits réutilisables par promotion",
+          },
         ].map((c) => (
           <Link
             key={c.href}
